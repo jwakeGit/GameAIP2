@@ -18,8 +18,14 @@ def traverse_nodes(node, board, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
-    pass
-    # Hint: return leaf_node
+    #if node has available actions:
+        #return node
+    #else:
+        #for child in node.child_nodes:
+            #recursively call traverse_nodes on child
+
+            ##unsure about what to do with the states of children, 
+            ##and about how to keep track of them
 
 
 def expand_leaf(node, board, state):
@@ -33,8 +39,10 @@ def expand_leaf(node, board, state):
     Returns:    The added child node.
 
     """
-    pass
-    # Hint: return new_node
+    #new_node = new instance of the node class
+    #new_node.parent = node
+    #append new_node to node.child_node
+    #return new_node
 
 
 def rollout(board, state):
@@ -45,7 +53,15 @@ def rollout(board, state):
         state:  The state of the game.
 
     """
-    pass
+    #if board.is_ended(state):
+        #current_node = traverse_nodes(root, board, state, bot identity)
+        #if board.points_values(state)[my index] == 1:
+            #backpropogate(current_node, 1)
+        #else:
+            #backpropogate(current_node, 0)
+    #me = board.current_player(state)
+    #new_state = board.next_state(state, choice(board.legal_actions(state)))
+    #rollout(board, new_state)
 
 
 def backpropagate(node, won):
@@ -56,7 +72,9 @@ def backpropagate(node, won):
         won:    An indicator of whether the bot won or lost the game.
 
     """
-    pass
+    #node.wins += won
+    #if node.parent:
+        #backpropogate(node.parent, won)
 
 
 def think(board, state):
