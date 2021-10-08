@@ -20,10 +20,11 @@ def traverse_nodes(node, board, state, identity):
     """
     if node.untried_actions != 0:
         if node.visits == 0:
-            return node
+            return (node, state)
         else:
             select_first = 1
             for move in board.legal_actions(state):
+                node.untried_actions.remove(move)
                 new_state = board.next_state(state, move)
                 if select_first:
                     returner_node = expand_leaf(node, board, new_state)
@@ -34,17 +35,21 @@ def traverse_nodes(node, board, state, identity):
                     unreturner_node.parent_action = move
                     node.child_nodes[move] = unreturner_node
                 select_first = 0
-            return returner_node
+            return (returner_node, board.next_state(state, returner_node.parent_action))
     else:
         best_node = node
-        for child in node.child_nodes:
+        for child in node.child_nodes.values():
             #if UCT of child > UCT of best_node:
-            child_UCT = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
-            best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+            if(identity == board.current_player(board.next_state(state, child.parent_action))):
+                child_UCT = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+            else:
+                child_UCT = ((1-child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                best_UCT = ((1-best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
             if child_UCT > best_UCT:
                 best_node = child
         new_state = board.next_state(state, best_node.parent_action)
-        traverse_nodes(best_node, board, new_state, board.current_player(new_state))
+        traverse_nodes(best_node, board, new_state, identity)
 
 
 def expand_leaf(node, board, state):
@@ -118,7 +123,23 @@ def think(board, state):
         node = root_node
 
         # Do MCTS - This is all you!
+        current_node, current_state = traverse_nodes(node, board, sampled_game, identity_of_bot)
+        win_dict = rollout(board, current_state)
+        if identity_of_bot == "red":
+            integer_identity = 1
+        else:
+            integer_identity = 2
+        if win_dict[integer_identity] == 1:
+            backpropagate(current_node, 1)
+        else:
+            backpropagate(current_node, 0)
+
+    #Set best options
+    for child in root_node.child_nodes.values():
+        if (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits))) > best_expectation:
+            best_expectation = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+            best_move = child.parent_action
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    return None
+    return best_move
