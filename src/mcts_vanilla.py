@@ -18,14 +18,30 @@ def traverse_nodes(node, board, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
-    #if node has available actions:
-        #return node
-    #else:
-        #for child in node.child_nodes:
-            #recursively call traverse_nodes on child
-
-            ##unsure about what to do with the states of children, 
-            ##and about how to keep track of them
+    if node.untried_actions != 0:
+        if node.visits == 0:
+            return node
+        else:
+            select_first = 1
+            for move in board.legal_actions(state):
+                new_state = board.next_state(state, move)
+                if select_first:
+                    returner_node = expand_leaf(node, board, new_state)
+                    returner_node.parent_action = move
+                    node.child_nodes[move] = returner_node
+                else:
+                    unreturner_node = expand_leaf(node, board, new_state)
+                    unreturner_node.parent_action = move
+                    node.child_nodes[move] = unreturner_node
+                select_first = 0
+            return returner_node
+    else:
+        best_node = node
+        for child in node.child_nodes:
+            #if UCT of child > UCT of best_node:
+                best_node = child
+        new_state = board.next_state(state, best_node.parent_action)
+        traverse_nodes(best_node, board, new_state, board.current_player(new_state))
 
 
 def expand_leaf(node, board, state):
@@ -39,10 +55,10 @@ def expand_leaf(node, board, state):
     Returns:    The added child node.
 
     """
-    #new_node = new instance of the node class
-    #new_node.parent = node
-    #append new_node to node.child_node
-    #return new_node
+    new_node = MCTSNode()
+    new_node.parent = node
+    new_node.untried_actions = board.legal_actions(state)
+    return new_node
 
 
 def rollout(board, state):
@@ -89,6 +105,10 @@ def think(board, state):
     """
     identity_of_bot = board.current_player(state)
     root_node = MCTSNode(parent=None, parent_action=None, action_list=board.legal_actions(state))
+    
+    moves = board.legal_actions(state)
+    best_move = moves[0]
+    best_expectation = float('-inf')
 
     for step in range(num_nodes):
         # Copy the game for sampling a playthrough
