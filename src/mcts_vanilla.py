@@ -18,12 +18,14 @@ def traverse_nodes(node, board, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
-    if node.untried_actions != 0:
+    if len(node.untried_actions) != 0:
         if node.visits == 0:
             return (node, state)
         else:
             select_first = 1
-            for move in board.legal_actions(state):
+            returner_node = node
+            for move in node.untried_actions:
+                #print(f'debug: move = {move}')
                 node.untried_actions.remove(move)
                 new_state = board.next_state(state, move)
                 if select_first:
@@ -35,21 +37,26 @@ def traverse_nodes(node, board, state, identity):
                     unreturner_node.parent_action = move
                     node.child_nodes[move] = unreturner_node
                 select_first = 0
+            #print(f'debug: returner action: {returner_node.parent_action}')
             return (returner_node, board.next_state(state, returner_node.parent_action))
     else:
         best_node = node
         for child in node.child_nodes.values():
             #if UCT of child > UCT of best_node:
             if(identity == board.current_player(board.next_state(state, child.parent_action))):
-                child_UCT = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
-                best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                if(child.visits > 0): child_UCT = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                else: child_UCT = float('inf')
+                if(best_node.visits > 0): best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                else: best_UCT = float('inf')
             else:
-                child_UCT = ((1-child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
-                best_UCT = ((1-best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                if(child.visits > 0): child_UCT = ((1-child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                else: child_UCT = float('inf')
+                if(best_node.visits > 0): best_UCT = ((1-best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                else: best_UCT = float('inf')
             if child_UCT > best_UCT:
                 best_node = child
         new_state = board.next_state(state, best_node.parent_action)
-        traverse_nodes(best_node, board, new_state, identity)
+        return traverse_nodes(best_node, board, new_state, identity)
 
 
 def expand_leaf(node, board, state):
@@ -81,7 +88,7 @@ def rollout(board, state):
         return board.points_values(state)
     else:
         move = choice(board.legal_actions(state))
-        rollout(board, board.next_state(state, move))
+        return rollout(board, board.next_state(state, move))
 
 
 def backpropagate(node, won):
