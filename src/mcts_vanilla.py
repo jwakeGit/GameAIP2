@@ -39,6 +39,9 @@ def traverse_nodes(node, board, state, identity):
         best_node = node
         for child in node.child_nodes:
             #if UCT of child > UCT of best_node:
+            child_UCT = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+            best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+            if child_UCT > best_UCT:
                 best_node = child
         new_state = board.next_state(state, best_node.parent_action)
         traverse_nodes(best_node, board, new_state, board.current_player(new_state))
@@ -69,15 +72,11 @@ def rollout(board, state):
         state:  The state of the game.
 
     """
-    #if board.is_ended(state):
-        #current_node = traverse_nodes(root, board, state, bot identity)
-        #if board.points_values(state)[my index] == 1:
-            #backpropogate(current_node, 1)
-        #else:
-            #backpropogate(current_node, 0)
-    #me = board.current_player(state)
-    #new_state = board.next_state(state, choice(board.legal_actions(state)))
-    #rollout(board, new_state)
+    if board.is_ended(state):
+        return board.points_values(state)
+    else:
+        move = choice(board.legal_actions(state))
+        rollout(board, board.next_state(state, move))
 
 
 def backpropagate(node, won):
@@ -88,9 +87,10 @@ def backpropagate(node, won):
         won:    An indicator of whether the bot won or lost the game.
 
     """
-    #node.wins += won
-    #if node.parent:
-        #backpropogate(node.parent, won)
+    node.wins += won
+    node.visits += 1
+    if node.parent:
+        backpropagate(node.parent, won)
 
 
 def think(board, state):
