@@ -18,8 +18,45 @@ def traverse_nodes(node, board, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
-    pass
-    # Hint: return leaf_node
+    if len(node.untried_actions) != 0:
+        if node.visits == 0:
+            return (node, state)
+        else:
+            select_first = 1
+            returner_node = node
+            for move in node.untried_actions:
+                #print(f'debug: move = {move}')
+                node.untried_actions.remove(move)
+                new_state = board.next_state(state, move)
+                if select_first:
+                    returner_node = expand_leaf(node, board, new_state)
+                    returner_node.parent_action = move
+                    node.child_nodes[move] = returner_node
+                else:
+                    unreturner_node = expand_leaf(node, board, new_state)
+                    unreturner_node.parent_action = move
+                    node.child_nodes[move] = unreturner_node
+                select_first = 0
+            #print(f'debug: returner action: {returner_node.parent_action}')
+            return (returner_node, board.next_state(state, returner_node.parent_action))
+    else:
+        best_node = node
+        for child in node.child_nodes.values():
+            #if UCT of child > UCT of best_node:
+            if(identity == board.current_player(board.next_state(state, child.parent_action))):
+                if(child.visits > 0): child_UCT = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                else: child_UCT = float('inf')
+                if(best_node.visits > 0): best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                else: best_UCT = float('inf')
+            else:
+                if(child.visits > 0): child_UCT = ((1-child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                else: child_UCT = float('inf')
+                if(best_node.visits > 0): best_UCT = ((1-best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                else: best_UCT = float('inf')
+            if child_UCT > best_UCT:
+                best_node = child
+        new_state = board.next_state(state, best_node.parent_action)
+        return traverse_nodes(best_node, board, new_state, identity)
 
 
 def expand_leaf(node, board, state):
@@ -33,8 +70,10 @@ def expand_leaf(node, board, state):
     Returns:    The added child node.
 
     """
-    pass
-    # Hint: return new_node
+    new_node = MCTSNode()
+    new_node.parent = node
+    new_node.untried_actions = board.legal_actions(state)
+    return new_node
 
 
 def rollout(board, state):
@@ -45,7 +84,11 @@ def rollout(board, state):
         state:  The state of the game.
 
     """
-    pass
+    if board.is_ended(state):
+        return board.points_values(state)
+    else:
+        move = choice(board.legal_actions(state))
+        return rollout(board, board.next_state(state, move))
 
 
 def backpropagate(node, won):
@@ -56,7 +99,10 @@ def backpropagate(node, won):
         won:    An indicator of whether the bot won or lost the game.
 
     """
-    pass
+    node.wins += won
+    node.visits += 1
+    if node.parent:
+        backpropagate(node.parent, won)
 
 
 def think(board, state):
@@ -71,6 +117,10 @@ def think(board, state):
     """
     identity_of_bot = board.current_player(state)
     root_node = MCTSNode(parent=None, parent_action=None, action_list=board.legal_actions(state))
+    
+    moves = board.legal_actions(state)
+    best_move = moves[0]
+    best_expectation = float('-inf')
 
     for step in range(num_nodes):
         # Copy the game for sampling a playthrough
@@ -80,7 +130,23 @@ def think(board, state):
         node = root_node
 
         # Do MCTS - This is all you!
+        current_node, current_state = traverse_nodes(node, board, sampled_game, identity_of_bot)
+        win_dict = rollout(board, current_state)
+        if identity_of_bot == "red":
+            integer_identity = 1
+        else:
+            integer_identity = 2
+        if win_dict[integer_identity] == 1:
+            backpropagate(current_node, 1)
+        else:
+            backpropagate(current_node, 0)
+
+    #Set best options
+    for child in root_node.child_nodes.values():
+        if (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits))) > best_expectation:
+            best_expectation = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+            best_move = child.parent_action
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    return None
+    return best_move
