@@ -85,15 +85,12 @@ def rollout(board, state):
 
     """
     moves = board.legal_actions(state)
-
-    best_move = moves[0]
-    best_expectation = float('-inf')
+    if len(moves) > 0: best_move = choice(board.legal_actions(state))
 
     me = board.current_player(state)
 
-    best_move = moves[0]
     for move in moves:
-        move_state = board.next_state(move)
+        move_state = board.next_state(state, move)
         red_score = len([v for v in board.owned_boxes(state) if v == 1])
         blue_score = len([v for v in board.owned_boxes(state) if v == 2])
         red_new_score = len([v for v in board.owned_boxes(move_state) if v == 1])
