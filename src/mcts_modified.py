@@ -84,11 +84,32 @@ def rollout(board, state):
         state:  The state of the game.
 
     """
+    moves = board.legal_actions(state)
+
+    best_move = moves[0]
+    best_expectation = float('-inf')
+
+    me = board.current_player(state)
+
+    best_move = moves[0]
+    for move in moves:
+        move_state = board.next_state(move)
+        red_score = len([v for v in board.owned_boxes(state) if v == 1])
+        blue_score = len([v for v in board.owned_boxes(state) if v == 2])
+        red_new_score = len([v for v in board.owned_boxes(move_state) if v == 1])
+        blue_new_score = len([v for v in board.owned_boxes(move_state) if v == 2])
+        
+        analysis = red_score - blue_score if me == 1 else blue_score - red_score
+        new_analysis = red_new_score - blue_new_score if me == 1 else blue_new_score - red_new_score
+        if(new_analysis > analysis):
+            best_move = move
+
     if board.is_ended(state):
         return board.points_values(state)
     else:
-        move = choice(board.legal_actions(state))
-        return rollout(board, board.next_state(state, move))
+        return rollout(board, board.next_state(state, best_move))
+        #move = choice(board.legal_actions(state))
+        #return rollout(board, board.next_state(state, move))
 
 
 def backpropagate(node, won):
