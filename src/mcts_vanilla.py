@@ -2,6 +2,8 @@
 from mcts_node import MCTSNode
 from random import choice
 from math import sqrt, log
+import sys
+sys.setrecursionlimit(2000)
 
 num_nodes = 1000
 explore_faction = 2.
@@ -18,7 +20,7 @@ def traverse_nodes(node, board, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
-    if len(node.untried_actions) != 0:
+    if len(node.untried_actions) > 0:
         if node.visits == 0:
             return (node, state)
         else:
@@ -49,14 +51,16 @@ def traverse_nodes(node, board, state, identity):
                 if(best_node.visits > 0): best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
                 else: best_UCT = float('inf')
             else:
-                if(child.visits > 0): child_UCT = ((1-child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                if(child.visits > 0): child_UCT = (1-(child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
                 else: child_UCT = float('inf')
-                if(best_node.visits > 0): best_UCT = ((1-best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                if(best_node.visits > 0): best_UCT = (1-(best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
                 else: best_UCT = float('inf')
             if child_UCT > best_UCT:
                 best_node = child
-        new_state = board.next_state(state, best_node.parent_action)
-        return traverse_nodes(best_node, board, new_state, identity)
+        if best_node != node: 
+            new_state = board.next_state(state, best_node.parent_action)
+            return traverse_nodes(best_node, board, new_state, identity)
+        else: return (node, state)
 
 
 def expand_leaf(node, board, state):
@@ -132,11 +136,7 @@ def think(board, state):
         # Do MCTS - This is all you!
         current_node, current_state = traverse_nodes(node, board, sampled_game, identity_of_bot)
         win_dict = rollout(board, current_state)
-        if identity_of_bot == "red":
-            integer_identity = 1
-        else:
-            integer_identity = 2
-        if win_dict[integer_identity] == 1:
+        if win_dict[identity_of_bot] == 1:
             backpropagate(current_node, 1)
         else:
             backpropagate(current_node, 0)
