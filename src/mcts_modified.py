@@ -49,9 +49,9 @@ def traverse_nodes(node, board, state, identity):
                 if(best_node.visits > 0): best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
                 else: best_UCT = float('inf')
             else:
-                if(child.visits > 0): child_UCT = ((1-child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                if(child.visits > 0): child_UCT = (1-(child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
                 else: child_UCT = float('inf')
-                if(best_node.visits > 0): best_UCT = ((1-best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                if(best_node.visits > 0): best_UCT = (1-(best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
                 else: best_UCT = float('inf')
             if child_UCT > best_UCT:
                 best_node = child

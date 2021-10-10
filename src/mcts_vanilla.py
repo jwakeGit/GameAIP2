@@ -3,7 +3,7 @@ from mcts_node import MCTSNode
 from random import choice
 from math import sqrt, log
 
-num_nodes = 1000
+num_nodes = 100
 explore_faction = 2.
 
 def traverse_nodes(node, board, state, identity):
@@ -49,9 +49,9 @@ def traverse_nodes(node, board, state, identity):
                 if(best_node.visits > 0): best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
                 else: best_UCT = float('inf')
             else:
-                if(child.visits > 0): child_UCT = ((1-child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                if(child.visits > 0): child_UCT = (1-(child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
                 else: child_UCT = float('inf')
-                if(best_node.visits > 0): best_UCT = ((1-best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                if(best_node.visits > 0): best_UCT = (1-(best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
                 else: best_UCT = float('inf')
             if child_UCT > best_UCT:
                 best_node = child
@@ -84,11 +84,14 @@ def rollout(board, state):
         state:  The state of the game.
 
     """
-    if board.is_ended(state):
-        return board.points_values(state)
-    else:
+    new_state = state
+    while not board.is_ended(new_state):
         move = choice(board.legal_actions(state))
-        return rollout(board, board.next_state(state, move))
+        new_state = board.next_state(state, move)
+        #return board.points_values(state)
+    #else:
+        #return rollout(board, board.next_state(state, move))
+    return board.points_values(new_state)
 
 
 def backpropagate(node, won):
