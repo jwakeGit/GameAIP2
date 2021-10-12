@@ -49,9 +49,9 @@ def traverse_nodes(node, board, state, identity):
                 if(best_node.visits > 0): best_UCT = (best_node.wins/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
                 else: best_UCT = float('inf')
             else:
-                if(child.visits > 0): child_UCT = (1-(child.wins)/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
+                if(child.visits > 0): child_UCT = (1-(child.wins/child.visits)) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
                 else: child_UCT = float('inf')
-                if(best_node.visits > 0): best_UCT = (1-(best_node.wins)/best_node.visits) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
+                if(best_node.visits > 0): best_UCT = (1-(best_node.wins/best_node.visits)) + (explore_faction*(sqrt(log(node.visits)/best_node.visits)))
                 else: best_UCT = float('inf')
             if child_UCT > best_UCT:
                 best_node = child
@@ -159,7 +159,7 @@ def think(board, state):
 
     #Set best options
     for child in root_node.child_nodes.values():
-        if (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits))) > best_expectation:
+        if child.visits > 0 and (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits))) > best_expectation:
             best_expectation = (child.wins/child.visits) + (explore_faction*(sqrt(log(node.visits)/child.visits)))
             best_move = child.parent_action
 
